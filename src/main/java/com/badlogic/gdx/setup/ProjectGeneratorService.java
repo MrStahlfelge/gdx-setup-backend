@@ -21,33 +21,27 @@ public class ProjectGeneratorService {
 	private ConcurrentHashMap<String, CachedProjects> generatedFiles = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<String, List<GdxTemplateFile>> cachedVersionFilesRepo = new ConcurrentHashMap<>();
 
-	public String generateAndZipGdxProject(GdxProjectData projectData) {
+	public String generateAndZipGdxProject(GdxProjectData projectData) throws Exception {
 
-		try {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ZipOutputStream zipOutputStream = new ZipOutputStream(baos);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ZipOutputStream zipOutputStream = new ZipOutputStream(baos);
 
-			new GdxProject().generateProject(projectData, cachedVersionFilesRepo, zipOutputStream);
+		new GdxProject().generateProject(projectData, cachedVersionFilesRepo, zipOutputStream);
 
-			// this is generated completely dynamical
-			zipOutputStream.putNextEntry(new ZipEntry("build.gradle"));
-			zipOutputStream.write("FROM MRSTAHLFELGE WITH LOVE".getBytes());
-			zipOutputStream.closeEntry();
+		// this is generated completely dynamical
+		zipOutputStream.putNextEntry(new ZipEntry("build.gradle"));
+		zipOutputStream.write("FROM MRSTAHLFELGE WITH LOVE".getBytes());
+		zipOutputStream.closeEntry();
 
-			zipOutputStream.close();
+		zipOutputStream.close();
 
-			clearCache();
+		clearCache();
 
-			String uuid = UUID.randomUUID().toString();
-			generatedFiles.put(uuid, new CachedProjects(baos.toByteArray()));
+		String uuid = UUID.randomUUID().toString();
+		generatedFiles.put(uuid, new CachedProjects(baos.toByteArray()));
 
-			return uuid;
+		return uuid;
 
-		} catch (Throwable t) {
-
-		}
-
-		return null;
 	}
 
 	@Scheduled(fixedRate = 1000 * 60 * 5, initialDelay = 10000)

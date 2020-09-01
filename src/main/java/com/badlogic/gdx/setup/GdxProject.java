@@ -14,7 +14,11 @@ import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHRelease;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.PagedIterable;
+import org.kohsuke.github.RateLimitHandler;
+
+import com.badlogic.gdx.setup.rest.NotFoundException;
 
 public class GdxProject {
 
@@ -28,7 +32,7 @@ public class GdxProject {
 		List<GdxTemplateFile> files = cachedVersionFilesRepo.get(projectData.targetGdxVersion);
 
 		if (files == null) {
-			GitHub githubClient = GitHub.connectAnonymously();
+			GitHub githubClient = new GitHubBuilder().withRateLimitHandler(RateLimitHandler.FAIL).build();
 			GHRepository libgdxRepo = githubClient.getRepository("libgdx/libgdx");
 
 			PagedIterable<GHRelease> releaseList = libgdxRepo.listReleases();
@@ -43,7 +47,7 @@ public class GdxProject {
 			}
 
 			if (targetRelease == null) {
-				throw new Exception("No release with name " + projectData.targetGdxVersion + " found");
+				throw new NotFoundException("No release with name " + projectData.targetGdxVersion + " found");
 			}
 
 			files = new LinkedList<>();
