@@ -32,56 +32,7 @@ public class GdxProject {
 		List<GdxTemplateFile> files = cachedVersionFilesRepo.get(projectData.targetGdxVersion);
 
 		if (files == null) {
-			GitHub githubClient = new GitHubBuilder().withRateLimitHandler(RateLimitHandler.FAIL).build();
-			GHRepository libgdxRepo = githubClient.getRepository("libgdx/libgdx");
-
-			PagedIterable<GHRelease> releaseList = libgdxRepo.listReleases();
-
-			GHRelease targetRelease = null;
-
-			for (GHRelease release : releaseList) {
-				if (release.getName().equals(projectData.targetGdxVersion)) {
-					targetRelease = release;
-					break;
-				}
-			}
-
-			if (targetRelease == null) {
-				throw new NotFoundException("No release with name " + projectData.targetGdxVersion + " found");
-			}
-
-			files = new LinkedList<>();
-
-			// ok, we have the release - list its files
-			List<GHContent> dirContent = libgdxRepo.getDirectoryContent(
-					"extensions/gdx-setup/res/com/badlogic/gdx/setup/resources", targetRelease.getTagName());
-			for (GHContent content : dirContent) {
-				if (content.getDownloadUrl() != null) {
-
-					GdxTemplateFile templateFile = new GdxTemplateFile();
-
-					templateFile.name = content.getName();
-
-					try (BufferedInputStream in = new BufferedInputStream(
-							new URL(content.getDownloadUrl()).openStream())) {
-						ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-						int nRead;
-						byte[] data = new byte[1024];
-						while ((nRead = in.read(data, 0, data.length)) != -1) {
-							buffer.write(data, 0, nRead);
-						}
-
-						buffer.flush();
-						templateFile.content = buffer.toByteArray();
-					} catch (IOException e) {
-						// handle exception
-					}
-
-					files.add(templateFile);
-
-				}
-			}
-			
+			files = fetchFilesFromGithub(projectData);		
 			cachedVersionFilesRepo.put(projectData.targetGdxVersion, files);
 		}
 
@@ -91,6 +42,60 @@ public class GdxProject {
 			zipOutputStream.closeEntry();
 		}
 
+	}
+
+	private List<GdxTemplateFile> fetchFilesFromGithub(GdxProjectData projectData) throws IOException {
+		List<GdxTemplateFile> files;
+		GitHub githubClient = new GitHubBuilder().withRateLimitHandler(RateLimitHandler.FAIL).build();
+		GHRepository libgdxRepo = githubClient.getRepository("libgdx/libgdx");
+
+		PagedIterable<GHRelease> releaseList = libgdxRepo.listReleases();
+
+		GHRelease targetRelease = null;
+
+		for (GHRelease release : releaseList) {
+			if (release.getName().equals(projectData.targetGdxVersion)) {
+				targetRelease = release;
+				break;
+			}
+		}
+
+		if (targetRelease == null) {
+			throw new NotFoundException("No release with name " + projectData.targetGdxVersion + " found");
+		}
+
+		files = new LinkedList<>();
+
+		// ok, we have the release - list its files
+		List<GHContent> dirContent = libgdxRepo.getDirectoryContent(
+				"extensions/gdx-setup/res/com/badlogic/gdx/setup/resources", targetRelease.getTagName());
+		for (GHContent content : dirContent) {
+			if (content.getDownloadUrl() != null) {
+
+				GdxTemplateFile templateFile = new GdxTemplateFile();
+
+				templateFile.name = content.getName();
+
+				try (BufferedInputStream in = new BufferedInputStream(
+						new URL(content.getDownloadUrl()).openStream())) {
+					ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+					int nRead;
+					byte[] data = new byte[1024];
+					while ((nRead = in.read(data, 0, data.length)) != -1) {
+						buffer.write(data, 0, nRead);
+					}
+
+					buffer.flush();
+					templateFile.content = buffer.toByteArray();
+				} catch (IOException e) {
+					// handle exception
+				}
+
+				files.add(templateFile);
+
+			}
+		}
+		return files;
 	}
 
 	public static class GdxProjectData {
