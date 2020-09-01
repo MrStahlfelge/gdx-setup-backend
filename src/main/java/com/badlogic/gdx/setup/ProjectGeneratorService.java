@@ -19,20 +19,21 @@ import com.badlogic.gdx.setup.GdxProject.GdxProjectData;
 @Service
 public class ProjectGeneratorService {
 	private ConcurrentHashMap<String, CachedProjects> generatedFiles = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, List<GdxTemplateFile>> cachedVersionFilesRepo = new ConcurrentHashMap<>();
 
 	public String generateAndZipGdxProject(GdxProjectData projectData) {
 
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ZipOutputStream zipOutputStream = new ZipOutputStream(baos);
-			
-			new GdxProject().generateProject(projectData, zipOutputStream);
+
+			new GdxProject().generateProject(projectData, cachedVersionFilesRepo, zipOutputStream);
 
 			// this is generated completely dynamical
 			zipOutputStream.putNextEntry(new ZipEntry("build.gradle"));
 			zipOutputStream.write("FROM MRSTAHLFELGE WITH LOVE".getBytes());
 			zipOutputStream.closeEntry();
-			
+
 			zipOutputStream.close();
 
 			clearCache();
@@ -81,7 +82,6 @@ public class ProjectGeneratorService {
 		return generatedFiles.get(id);
 	}
 
-	
 	public static class CachedProjects {
 		public final byte[] zippedContent;
 		public final long timestamp;
