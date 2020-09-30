@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.badlogic.gdx.setup.GdxProject.GdxProjectData;
+import com.badlogic.gdx.setup.GdxProjectData;
 import com.badlogic.gdx.setup.ProjectGeneratorService;
 import com.badlogic.gdx.setup.ProjectGeneratorService.CachedProjects;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -42,14 +42,24 @@ public class ProjectGeneratorController {
 	}
 
 	@GetMapping("/generate")
-	public GeneratorResponse generateProject(@RequestParam String gdxVersion, 
-			@RequestParam(defaultValue = "false") boolean withHtml
+	public GeneratorResponse generateProject(@RequestParam(defaultValue = "1.9.12") String gdxVersion,
+			@RequestParam String appName,
+			@RequestParam String mainClass,
+			@RequestParam(defaultValue = "false") boolean withHtml,
+			@RequestParam(defaultValue = "false") boolean withIos,
+			@RequestParam(defaultValue = "false") boolean withDesktop,
+			@RequestParam(defaultValue = "false") boolean withAndroid
 			// add everything needed here...
 			) {
 
 		GdxProjectData projectData = new GdxProjectData();
 		projectData.targetGdxVersion = gdxVersion;
 		projectData.withHtml = withHtml;
+		projectData.withAndroid = withAndroid;
+		projectData.withDesktop = withDesktop;
+		projectData.withIos = withIos;
+		projectData.appName = appName;
+		projectData.mainClass = mainClass;
 		
 		GeneratorResponse response = new GeneratorResponse();
 
@@ -59,6 +69,7 @@ public class ProjectGeneratorController {
 			response.warnings = projectData.warnings.toArray(new String[0]);
 		} catch (Throwable t) {
 			response.errorMessage = t.getMessage();
+			t.printStackTrace();
 		}
 
 		return response;
